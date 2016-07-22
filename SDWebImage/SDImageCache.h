@@ -106,6 +106,19 @@ typedef void(^SDWebImageCalculateSizeBlock)(NSUInteger fileCount, NSUInteger tot
         completion:(nullable SDWebImageNoParamsBlock)completionBlock;
 
 /**
+ * Asynchronously or synchronously store an image into memory and disk cache at the given key.
+ *
+ * @param image           The image to store
+ * @param key             The unique image cache key, usually it's image absolute URL
+ * @param async           Perform asynchronously if YES otherwise  perform synchronously
+ * @param completionBlock A block executed after the operation is finished
+ */
+- (void)storeImage:(nullable UIImage *)image
+            forKey:(nullable NSString *)key
+             async:(BOOL)async
+        completion:(nullable SDWebImageNoParamsBlock)completionBlock;
+
+/**
  * Asynchronously store an image into memory and disk cache at the given key.
  *
  * @param image           The image to store
@@ -133,6 +146,25 @@ typedef void(^SDWebImageCalculateSizeBlock)(NSUInteger fileCount, NSUInteger tot
          imageData:(nullable NSData *)imageData
             forKey:(nullable NSString *)key
             toDisk:(BOOL)toDisk
+        completion:(nullable SDWebImageNoParamsBlock)completionBlock;
+
+/**
+ * Asynchronously or synchronously store an image into memory and disk cache at the given key.
+ *
+ * @param image           The image to store
+ * @param imageData       The image data as returned by the server, this representation will be used for disk storage
+ *                        instead of converting the given image object into a storable/compressed image format in order
+ *                        to save quality and CPU
+ * @param key             The unique image cache key, usually it's image absolute URL
+ * @param toDisk          Store the image to disk cache if YES
+ * @param async           Store the image to disk cache asynchronously or not.
+ * @param completionBlock A block executed after the operation is finished
+ */
+- (void)storeImage:(nullable UIImage *)image
+         imageData:(nullable NSData *)imageData
+            forKey:(nullable NSString *)key
+            toDisk:(BOOL)toDisk
+             async:(BOOL)async
         completion:(nullable SDWebImageNoParamsBlock)completionBlock;
 
 /**

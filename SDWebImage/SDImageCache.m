@@ -193,6 +193,13 @@ FOUNDATION_STATIC_INLINE NSUInteger SDCacheCostForImage(UIImage *image) {
 
 - (void)storeImage:(nullable UIImage *)image
             forKey:(nullable NSString *)key
+             async:(BOOL)async
+        completion:(nullable SDWebImageNoParamsBlock)completionBlock {
+    [self storeImage:image imageData:nil forKey:key toDisk:YES async:async completion:completionBlock];
+}
+
+- (void)storeImage:(nullable UIImage *)image
+            forKey:(nullable NSString *)key
             toDisk:(BOOL)toDisk
         completion:(nullable SDWebImageNoParamsBlock)completionBlock {
     [self storeImage:image imageData:nil forKey:key toDisk:toDisk completion:completionBlock];
@@ -202,6 +209,15 @@ FOUNDATION_STATIC_INLINE NSUInteger SDCacheCostForImage(UIImage *image) {
          imageData:(nullable NSData *)imageData
             forKey:(nullable NSString *)key
             toDisk:(BOOL)toDisk
+        completion:(nullable SDWebImageNoParamsBlock)completionBlock {
+    [self storeImage:image imageData:imageData forKey:key toDisk:toDisk async:YES completion:completionBlock];
+}
+
+- (void)storeImage:(nullable UIImage *)image
+         imageData:(nullable NSData *)imageData
+            forKey:(nullable NSString *)key
+            toDisk:(BOOL)toDisk
+             async:(BOOL)async
         completion:(nullable SDWebImageNoParamsBlock)completionBlock {
     if (!image || !key) {
         if (completionBlock) {
@@ -214,23 +230,34 @@ FOUNDATION_STATIC_INLINE NSUInteger SDCacheCostForImage(UIImage *image) {
         NSUInteger cost = SDCacheCostForImage(image);
         [self.memCache setObject:image forKey:key cost:cost];
     }
-    
+
+    void (^writeImageBlock)(UIImage *image, NSData *imageData) = ^void(UIImage *bImage, NSData *bImageData) {
+        NSData *data = bImageData;
+
+        if (!data && bImage) {
+            SDImageFormat imageFormatFromData = [NSData sd_imageFormatForImageData:data];
+            data = [bImage sd_imageDataAsFormat:imageFormatFromData];
+        }
+
+        [self storeImageDataToDisk:data forKey:key];
+    };
+
     if (toDisk) {
-        dispatch_async(self.ioQueue, ^{
-            NSData *data = imageData;
-            
-            if (!data && image) {
-                SDImageFormat imageFormatFromData = [NSData sd_imageFormatForImageData:data];
-                data = [image sd_imageDataAsFormat:imageFormatFromData];
-            }
-            
-            [self storeImageDataToDisk:data forKey:key];
-            if (completionBlock) {
-                dispatch_async(dispatch_get_main_queue(), ^{
-                    completionBlock();
-                });
-            }
-        });
+        if (async) {
+            dispatch_async(self.ioQueue, ^{
+                writeImageBlock(image, imageData);
+                if (completionBlock) {
+                    dispatch_async(dispatch_get_main_queue(), ^{
+                        completionBlock();
+                    });
+                }
+            });
+        } else {
+            dispatch_sync(self.ioQueue, ^{
+                writeImageBlock(image, imageData);
+                if (completionBlock) completionBlock();
+            });
+        }
     } else {
         if (completionBlock) {
             completionBlock();
