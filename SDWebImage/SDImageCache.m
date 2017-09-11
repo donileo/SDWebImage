@@ -231,7 +231,8 @@ FOUNDATION_STATIC_INLINE NSUInteger SDCacheCostForImage(UIImage *image) {
         [self.memCache setObject:image forKey:key cost:cost];
     }
 
-    void (^writeImageBlock)(UIImage *image, NSData *imageData) = ^void(UIImage *bImage, NSData *bImageData) {
+    void (^writeImageBlock)(UIImage *, NSData *) = ^void(UIImage *bImage, NSData *bImageData) {
+      @autoreleasepool {
         NSData *data = bImageData;
 
         if (!data && bImage) {
@@ -240,6 +241,7 @@ FOUNDATION_STATIC_INLINE NSUInteger SDCacheCostForImage(UIImage *image) {
         }
 
         [self storeImageDataToDisk:data forKey:key];
+      }
     };
 
     if (toDisk) {
@@ -377,8 +379,7 @@ FOUNDATION_STATIC_INLINE NSUInteger SDCacheCostForImage(UIImage *image) {
             image = [UIImage decodedImageWithImage:image];
         }
         return image;
-    }
-    else {
+    } else {
         return nil;
     }
 }
